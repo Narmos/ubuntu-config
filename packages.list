@@ -1,0 +1,11 @@
+#add:packagename
+#del:packagename
+
+# CLI
+add:fastfetch
+add:git
+
+# GUI
+add:dconf-editor
+add:filezilla
+add:gnome-tweaks

@@ -1,0 +1,12 @@
+#add:packagename
+#del:packagename
+
+add:org.onlyoffice.desktopeditors
+add:com.mattjakeman.ExtensionManager
+add:it.mijorus.gearlever
+add:org.gimp.GIMP
+add:org.inkscape.Inkscape
+add:org.jdownloader.JDownloader
+add:org.keepassxc.KeePassXC
+add:org.mozilla.Thunderbird
+add:org.videolan.VLC
