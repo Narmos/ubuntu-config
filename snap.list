@@ -1,4 +1,5 @@
 #add:packagename
+#addclassic:packagename
 #del:packagename
 
-add:code
+addclassic:code

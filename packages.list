@@ -6,6 +6,16 @@ add:fastfetch
 add:git
 
 # GUI
-add:dconf-editor
 add:filezilla
+
+# GNOME
+add:dconf-editor
 add:gnome-tweaks
+
+# Python
+add:python3-pip
+add:python3-tk
+add:python3-venv
+
+# Dépendance pour lancer les AppImages
+add:libfuse2t64
