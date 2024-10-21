@@ -111,7 +111,7 @@ ask_update() {
 	echo -n -e "\n\033[36mVoulez-vous lancer les MàJ maintenant ? [o/N] : \033[0m"
 	read startupdate
 	startupdate=${startupdate:-n}
-	echo ""
+	echo
 	if [[ ${startupdate,,} =~ ^[oOyY]$ ]]; then
 		clear -x
 		bash "$0"
@@ -235,7 +235,7 @@ echo -e "\033[1mConfiguration des dépôts\033[0m"
 
 ## AJOUT dépôt DEB Fastfetch
 if ! check_apt_repo zhangsongcui3371-ubuntu-fastfetch-*.sources; then
-	echo -e -n " \xE2\x86\xB3 Ajout dépôt DEB : Fastfetch "
+	echo -e -n " \xE2\x86\xB3 Ajout du dépôt DEB : Fastfetch "
 	apt-add-repository -y ppa:zhangsongcui3371/fastfetch >> "$LOGFILE" 2>&1
 	check_cmd
 fi
@@ -243,7 +243,7 @@ fi
 ## AJOUT dépôt Flatpak Flathub
 if $FLATPAK; then
 	if [[ $(flatpak remotes | grep -c flathub) -ne 1 ]]; then
-		echo -e -n " \xE2\x86\xB3 Ajout dépôt Flatpak : Flathub "
+		echo -e -n " \xE2\x86\xB3 Ajout du dépôt Flatpak : Flathub "
 		flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo > /dev/null
 		check_cmd
 	fi
