@@ -2,6 +2,7 @@
 #del:packagename
 
 add:org.onlyoffice.desktopeditors
+add:org.dupot.easyflatpak
 add:com.mattjakeman.ExtensionManager
 add:com.github.tchx84.Flatseal
 add:it.mijorus.gearlever

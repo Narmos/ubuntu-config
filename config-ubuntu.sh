@@ -5,7 +5,7 @@
 #################
 CURRENTPATH=$(dirname "$0")
 FLATPAK=true
-FLATPAKCOMP="flatpak gnome-software-plugin-flatpak"
+FLATPAKCOMP="flatpak"
 LOGFILE="/tmp/config-ubuntu.log"
 
 #################
@@ -210,14 +210,12 @@ check_cmd
 if $FLATPAK; then
 	echo -e "\033[1mConfiguration du système Flatpak\033[0m"
 
-	## INSTALL paquets requis pour système Flatpak
-	for p in $FLATPAKCOMP; do
-		if ! check_apt_pkg "$p"; then
-			echo -e -n " \xE2\x86\xB3 Installation du paquet requis : $p "
-			add_apt_pkg "$p"
-			check_cmd
-		fi
-	done
+	## INSTALL paquet requis pour système Flatpak
+	if ! check_apt_pkg "flatpak"; then
+		echo -e -n " \xE2\x86\xB3 Installation du paquet requis : flatpak "
+		add_apt_pkg "flatpak"
+		check_cmd
+	fi
 
 	## MAJ des paquets Flatpak
 	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets Flatpak "
@@ -332,7 +330,7 @@ fi
 
 ### CONFIG système
 echo -e "\033[1mConfiguration personnalisée du système\033[0m"
-
+## Rien pour l'instant
 echo
 
 ### VERIF si reboot nécessaire
