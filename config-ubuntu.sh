@@ -8,6 +8,13 @@ FLATPAK=true
 FLATPAKCOMP="flatpak"
 LOGFILE="/tmp/config-ubuntu.log"
 
+# RECUP les infos sur la distribution pour vérification
+if [[ -e /etc/os-release ]]; then
+	os_release="/etc/os-release"
+	. "${os_release}"
+	echo "Distribution : ${PRETTY_NAME}"
+fi
+
 #################
 ### FONCTIONS ###
 #################
@@ -216,6 +223,11 @@ if $FLATPAK; then
 		add_apt_pkg "flatpak"
 		check_cmd
 	fi
+	if ! check_apt_pkg "gnome-software-plugin-flatpak"; then
+		echo -e -n " \xE2\x86\xB3 Installation du paquet requis : gnome-software-plugin-flatpak "
+		add_apt_pkg gnome-software-plugin-flatpak
+		check_cmd
+	fi
 
 	## MAJ des paquets Flatpak
 	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets Flatpak "
@@ -230,13 +242,6 @@ fi
 
 ### CONFIG des dépôts
 echo -e "\033[1mConfiguration des dépôts\033[0m"
-
-## AJOUT dépôt DEB Fastfetch
-if ! check_apt_repo zhangsongcui3371-ubuntu-fastfetch-*.sources; then
-	echo -e -n " \xE2\x86\xB3 Ajout du dépôt DEB : Fastfetch "
-	apt-add-repository -y ppa:zhangsongcui3371/fastfetch >> "$LOGFILE" 2>&1
-	check_cmd
-fi
 
 ## AJOUT dépôt Flatpak Flathub
 if $FLATPAK; then
