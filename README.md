@@ -2,7 +2,7 @@
 
 Ma configuration d'Ubuntu (base Ubuntu Desktop). Configure & met à jour Ubuntu.
 
-Versions testées : 24.04 LTS | 24.10
+Versions testées : 24.04 LTS > 26.04 LTS
 
 **Ne fonctionne qu'avec Ubuntu Desktop disposant de l'environnement de bureau GNOME.**
 
@@ -46,13 +46,13 @@ Le script lancé va effectuer les opérations suivantes :
     - Mettre à jour les paquets DEB
 - Configurer le système Snap
     - Mettre à jour les paquets Snap
-- Configurer le système Flatpak *(si activer)*
+- Configurer le système Flatpak *(si activé)*
     - Installer les paquets requis pour Flatpak
     - Mettre à jour les paquets Flatpak + *Proposition de redémarrage du système si nécessaire*
-- Ajouter les dépôts additionnels APT / Flatpak *(si activer)*
+- Ajouter les dépôts additionnels APT / Flatpak *(si activé)*
 - Ajouter ou Supprimer les paquets DEB paramétrés dans le fichier packages.list
 - Ajouter ou Supprimer les paquets Snap paramétrés dans le fichier snap.list 
-- Ajouter ou Supprimer les paquets Flatpak paramétrés dans le fichier flatpak.list *(si activer)*
+- Ajouter ou Supprimer les paquets Flatpak paramétrés dans le fichier flatpak.list *(si activé)*
 - Personnaliser la configuration du système + *Proposition de redémarrage du système si nécessaire*
 
 # Crédits
