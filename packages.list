@@ -23,7 +23,7 @@ add:vlc
 #add:gnome-connections
 #add:gnome-contacts
 #add:gnome-maps
-#add:gnome-podcats
+#add:gnome-podcasts
 add:gnome-tweaks
 
 # Python
