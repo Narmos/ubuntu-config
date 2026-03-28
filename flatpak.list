@@ -1,13 +1,14 @@
 #add:packagename
 #del:packagename
 
-add:org.onlyoffice.desktopeditors
-add:org.dupot.easyflatpak
+#add:com.github.tchx84.Flatseal
 add:com.mattjakeman.ExtensionManager
-add:com.github.tchx84.Flatseal
+add:com.vscodium.codium
 add:it.mijorus.gearlever
+#add:org.chromium.Chromium
 add:org.gimp.GIMP
 add:org.inkscape.Inkscape
+#add:org.jdownloader.JDownloader
 add:org.keepassxc.KeePassXC
-add:org.mozilla.Thunderbird
-add:org.videolan.VLC
+add:org.onlyoffice.desktopeditors
+#add:org.raspberrypi.rpi-imager

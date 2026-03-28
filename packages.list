@@ -2,14 +2,28 @@
 #del:packagename
 
 # CLI
+add:7zip
 add:fastfetch
 add:git
+#add:lm-sensors
+add:wakeonlan
 
 # GUI
 add:filezilla
+#add:geary
+#add:gparted
+#add:sqlitebrowser
+#add:virt-viewer
+add:vlc
 
 # GNOME
-add:dconf-editor
+#add:dconf-editor
+#add:gnome-boxes
+#add:gnome-calendar
+#add:gnome-connections
+#add:gnome-contacts
+#add:gnome-maps
+#add:gnome-podcats
 add:gnome-tweaks
 
 # Python
