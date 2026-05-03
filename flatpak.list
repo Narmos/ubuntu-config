@@ -3,7 +3,9 @@
 
 #add:com.github.tchx84.Flatseal
 add:com.mattjakeman.ExtensionManager
+#add:com.valvesoftware.Steam
 add:com.vscodium.codium
+add:io.podman_desktop.PodmanDesktop
 add:it.mijorus.gearlever
 #add:org.chromium.Chromium
 add:org.gimp.GIMP
