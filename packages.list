@@ -19,11 +19,10 @@ add:vlc
 
 # GNOME
 add:dconf-editor
-#add:gnome-boxes
-#add:gnome-calendar
-#add:gnome-connections
-#add:gnome-contacts
-#add:gnome-maps
+add:gnome-boxes
+add:gnome-calendar
+add:gnome-connections
+add:gnome-contacts
 #add:gnome-podcasts
 add:gnome-tweaks
 
