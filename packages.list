@@ -16,6 +16,7 @@ add:gparted
 #add:sqlitebrowser
 add:virt-viewer
 add:vlc
+del:sysprof
 
 # GNOME
 add:dconf-editor
