@@ -34,3 +34,6 @@ add:python3-venv
 
 # Dépendance pour lancer les AppImages
 add:libfuse2t64
+
+# Spécifique à Ubuntu
+add:ubuntu-restricted-extras
