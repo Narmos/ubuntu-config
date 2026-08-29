@@ -1,16 +1,13 @@
 #add:packagename
 #del:packagename
 
-#add:com.github.tchx84.Flatseal
+add:com.github.tchx84.Flatseal
 add:com.mattjakeman.ExtensionManager
-#add:com.valvesoftware.Steam
 add:com.vscodium.codium
 add:io.podman_desktop.PodmanDesktop
 add:it.mijorus.gearlever
-#add:org.chromium.Chromium
 add:org.gimp.GIMP
 add:org.inkscape.Inkscape
 add:org.jdownloader.JDownloader
 add:org.keepassxc.KeePassXC
 add:org.onlyoffice.desktopeditors
-#add:org.raspberrypi.rpi-imager

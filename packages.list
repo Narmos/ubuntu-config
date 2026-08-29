@@ -5,15 +5,15 @@
 add:7zip
 add:fastfetch
 add:git
-#add:lm-sensors
+add:lm-sensors
 add:podman
 add:wakeonlan
 
 # GUI
+add:bazaar
 add:filezilla
 add:geary
 add:gparted
-#add:sqlitebrowser
 add:virt-viewer
 add:vlc
 del:sysprof
@@ -24,7 +24,6 @@ add:gnome-boxes
 add:gnome-calendar
 add:gnome-connections
 add:gnome-contacts
-#add:gnome-podcasts
 add:gnome-tweaks
 
 # Python
@@ -34,6 +33,3 @@ add:python3-venv
 
 # Dépendance pour lancer les AppImages
 add:libfuse2t64
-
-# Spécifique à Ubuntu
-add:ubuntu-restricted-extras
