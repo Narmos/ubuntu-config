@@ -11,6 +11,7 @@ add:wakeonlan
 
 # GUI
 add:bazaar
+add:code
 add:file-roller
 add:filezilla
 add:geary

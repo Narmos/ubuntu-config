@@ -237,6 +237,20 @@ fi
 ### CONFIG des dépôts
 echo -e "\033[1mConfiguration des dépôts\033[0m"
 
+## AJOUT dépôt pour VSCode
+if ! check_apt_repo vscode.sources; then
+	echo -e -n " \xE2\x86\xB3 Ajout du dépôt DEB : VSCode "
+	wget -qO - https://packages.microsoft.com/keys/microsoft.asc \
+	| gpg --dearmor -o /etc/apt/keyrings/microsoft-archive-keyring.gpg
+	echo -e 'Types: deb\nURIs: https://packages.microsoft.com/repos/code\nSuites: stable\nComponents: main\nArchitectures: amd64\nSigned-by: /etc/apt/keyrings/microsoft-archive-keyring.gpg' \
+	| sudo tee /etc/apt/sources.list.d/vscode.sources
+	check_cmd
+	
+	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
+	refresh_apt_cache
+	check_cmd
+fi
+
 ## AJOUT dépôt Flatpak Flathub
 if $FLATPAK; then
 	if [[ $(flatpak remotes | grep -c flathub) -ne 1 ]]; then
