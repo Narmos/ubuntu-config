@@ -237,6 +237,28 @@ fi
 ### CONFIG des dépôts
 echo -e "\033[1mConfiguration des dépôts\033[0m"
 
+## AJOUT dépôt pour Firefox
+if ! check_apt_repo mozilla.sources; then
+	echo -e -n " \xE2\x86\xB3 Ajout du dépôt DEB : Firefox "
+	wget -qO - https://packages.mozilla.org/apt/repo-signing-key.gpg \
+	| gpg --dearmor -o /etc/apt/keyrings/mozilla-archive-keyring.gpg
+	echo -e 'Types: deb\nURIs: https://packages.mozilla.org/apt\nSuites: mozilla\nComponents: main\nSigned-by: /etc/apt/keyrings/mozilla-archive-keyring.gpg' \
+	| sudo tee /etc/apt/sources.list.d/mozilla.sources
+	check_cmd
+
+	# On priorise les paquets depuis le dépôt Mozilla
+	echo -e 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000' \
+	| sudo tee /etc/apt/preferences.d/mozilla
+
+	# On bloque l'installation de Firefox via Snap
+	echo -e 'Package: firefox*\nPin: release o=Ubuntu*\nPin-Priority: -1' \
+	| sudo tee /etc/apt/preferences.d/no-firefox-snap-please
+
+	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
+	refresh_apt_cache
+	check_cmd
+fi
+
 ## AJOUT dépôt pour VSCode
 if ! check_apt_repo vscode.sources; then
 	echo -e -n " \xE2\x86\xB3 Ajout du dépôt DEB : VSCode "
@@ -258,6 +280,29 @@ if $FLATPAK; then
 		flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo > /dev/null
 		check_cmd
 	fi
+fi
+
+### REMPLACEMENT Snap
+echo -e "\033[1mRemplacement de Snap forcé par Ubuntu\033[0m"
+
+## Firefox
+if check_snap_pkg "firefox"; then
+	echo -e " \xE2\x86\xB3 Remplacement du Snap Firefox par le paquet DEB "
+	echo -e -n "  \xE2\x86\xB3 Suppression du Snap : firefox "
+	del_snap_pkg "firefox"
+	check_cmd
+
+	echo -e -n "  \xE2\x86\xB3 Suppression du paquet résiduel : firefox "
+	del_apt_pkg "firefox"
+	check_cmd
+
+	echo -e -n "  \xE2\x86\xB3 Installation du paquet : firefox "
+	add_apt_pkg "firefox"
+	check_cmd
+
+	echo -e -n "  \xE2\x86\xB3 Installation du paquet : firefox-l10n-fr "
+	add_apt_pkg "firefox-l10n-fr"
+	check_cmd
 fi
 
 ### INSTALL/SUPPRESSION DEB
