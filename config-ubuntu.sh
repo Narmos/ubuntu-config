@@ -5,7 +5,6 @@
 #################
 CURRENTPATH=$(dirname "$0")
 FLATPAK=true
-FLATPAKCOMP="flatpak"
 LOGFILE="/tmp/config-ubuntu.log"
 
 # RECUP les infos sur la distribution pour vérification
@@ -221,11 +220,6 @@ if $FLATPAK; then
 	if ! check_apt_pkg "flatpak"; then
 		echo -e -n " \xE2\x86\xB3 Installation du paquet requis : flatpak "
 		add_apt_pkg "flatpak"
-		check_cmd
-	fi
-	if ! check_apt_pkg "gnome-software-plugin-flatpak"; then
-		echo -e -n " \xE2\x86\xB3 Installation du paquet requis : gnome-software-plugin-flatpak "
-		add_apt_pkg gnome-software-plugin-flatpak
 		check_cmd
 	fi
 
