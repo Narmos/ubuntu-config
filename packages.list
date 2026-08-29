@@ -11,9 +11,11 @@ add:wakeonlan
 
 # GUI
 add:bazaar
+add:file-roller
 add:filezilla
 add:geary
 add:gparted
+add:simple-scan
 add:virt-viewer
 add:vlc
 del:sysprof
