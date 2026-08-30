@@ -388,7 +388,17 @@ fi
 
 ### CONFIG système
 echo -e "\033[1mConfiguration personnalisée du système\033[0m"
-## Rien pour l'instant
+
+## Bluetooth
+if [[ -e "/etc/bluetooth/main.conf" ]]; then
+	if ! grep -q "^[[:space:]]*AutoEnable=false" "/etc/bluetooth/main.conf"; then
+		echo -e -n " \xE2\x86\xB3 Désactivation du bluetooth au démarrage "
+		# Cette regex gère les espaces et remplace '#AutoEnable=true' ou 'AutoEnable=true'
+		sed -i 's/^[[:space:]]*#\?[[:space:]]*AutoEnable=.*/AutoEnable=false/' "/etc/bluetooth/main.conf"
+		check_cmd
+	fi
+fi
+
 echo
 
 ### VERIF si reboot nécessaire
