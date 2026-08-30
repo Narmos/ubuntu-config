@@ -5,6 +5,7 @@
 #################
 CURRENTPATH=$(dirname "$0")
 FLATPAK=true
+SNAP=true
 LOGFILE="/tmp/config-ubuntu.log"
 
 # RECUP les infos sur la distribution pour vérification
@@ -151,6 +152,12 @@ if ! check_apt_pkg ubuntu-desktop && ! check_apt_pkg ubuntu-desktop-minimal; the
 	exit 2;
 fi
 
+### VERIF gestion Snap
+if check_apt_pkg snapd && ! $SNAP; then
+	echo -e "\033[5;33mATTENTION\033[0m\033[33m Le système Snap est installé mais sa gestion via ce script est désactivée !\033[0m"
+	echo -e "Pour gérer les Snaps, remplacer la variable SNAP=false par SNAP=true au début du script $(basename $0)"
+fi
+
 ### VERIF gestion Flatpak
 if check_apt_pkg flatpak && ! $FLATPAK; then
 	echo -e "\033[5;33mATTENTION\033[0m\033[33m : Le système Flatpak est installé mais sa gestion via ce script est désactivée !\033[0m"
@@ -169,8 +176,13 @@ if [[ "$1" = "check" ]]; then
 
 	echo
 
-	echo -e "\033[1mMises à jour disponibles Snap : \033[0m"
-	check_snap_updates
+	if $SNAP; then
+		if check_apt_pkg "snapd"; then
+			echo
+			echo -e "\033[1mMises à jour disponibles Snap : \033[0m"
+			check_snap_updates
+		fi
+	fi
 
 	if $FLATPAK; then
 		if check_apt_pkg "flatpak"; then
@@ -205,12 +217,21 @@ apt-get dist-upgrade -y >> "$LOGFILE" 2>&1
 check_cmd
 
 ### CONFIG système Snap
-echo -e "\033[1mConfiguration du système Snap\033[0m"
+if $SNAP; then
+	echo -e "\033[1mConfiguration du système Snap\033[0m"
 
-## MAJ des paquets Snap
-echo -e -n " \xE2\x86\xB3 Mise à jour des paquets Snap "
-snap refresh >> "$LOGFILE"  2>&1
-check_cmd
+	## INSTALL paquet requis pour système Snap
+	if ! check_apt_pkg "snapd"; then
+		echo -e -n " \xE2\x86\xB3 Installation du paquet requis : snapd "
+		add_apt_pkg snapd
+		check_cmd
+	fi
+
+	## MAJ des paquets Snap
+	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets Snap "
+	snap refresh >> "$LOGFILE"  2>&1
+	check_cmd
+fi
 
 ### CONFIG système Flatpak
 if $FLATPAK; then
@@ -329,37 +350,39 @@ while read -r line; do
 done < "$CURRENTPATH/packages.list"
 
 ### INSTALL/SUPPRESSION Snap
-echo -e "\033[1mGestion des paquets Snap\033[0m"
-## Selon snap.list
-while read -r line
-do
-	if [[ "$line" == add:* ]]; then
-		p=${line#add:}
-		if ! check_snap_pkg "$p"; then
-			echo -e -n " \xE2\x86\xB3 Installation du Snap : $p "
-			add_snap_pkg "$p"
-			check_cmd
+if $SNAP; then
+	echo -e "\033[1mGestion des paquets Snap\033[0m"
+	## Selon snap.list
+	while read -r line
+	do
+		if [[ "$line" == add:* ]]; then
+			p=${line#add:}
+			if ! check_snap_pkg "$p"; then
+				echo -e -n " \xE2\x86\xB3 Installation du Snap : $p "
+				add_snap_pkg "$p"
+				check_cmd
+			fi
 		fi
-	fi
 
-	if [[ "$line" == addclassic:* ]]; then
-		p=${line#addclassic:}
-		if ! check_snap_pkg "$p"; then
-			echo -e -n " \xE2\x86\xB3 Installation du Snap : $p "
-			add_snap_classic_pkg "$p"
-			check_cmd
+		if [[ "$line" == addclassic:* ]]; then
+			p=${line#addclassic:}
+			if ! check_snap_pkg "$p"; then
+				echo -e -n " \xE2\x86\xB3 Installation du Snap : $p "
+				add_snap_classic_pkg "$p"
+				check_cmd
+			fi
 		fi
-	fi
-	
-	if [[ "$line" == del:* ]]; then
-		p=${line#del:}
-		if check_snap_pkg "$p"; then
-			echo -e -n " \xE2\x86\xB3 Suppression du Snap : $p "
-			del_snap_pkg "$p"
-			check_cmd
+		
+		if [[ "$line" == del:* ]]; then
+			p=${line#del:}
+			if check_snap_pkg "$p"; then
+				echo -e -n " \xE2\x86\xB3 Suppression du Snap : $p "
+				del_snap_pkg "$p"
+				check_cmd
+			fi
 		fi
-	fi
-done < "$CURRENTPATH/snap.list"
+	done < "$CURRENTPATH/snap.list"
+fi
 
 ### INSTALL/SUPPRESSION Flatpak
 if $FLATPAK; then
