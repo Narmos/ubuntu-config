@@ -4,6 +4,7 @@
 ### VARIABLES ###
 #################
 CURRENTPATH=$(dirname "$0")
+USER_HOME=$(eval echo ~$SUDO_USER)
 FLATPAK=true
 SNAP=true
 LOGFILE="/tmp/config-ubuntu.log"
@@ -411,6 +412,18 @@ fi
 
 ### CONFIG système
 echo -e "\033[1mConfiguration personnalisée du système\033[0m"
+
+## Fastfetch
+if [[ ! -d "$USER_HOME/.config/fastfetch" ]]; then
+	echo -e -n " \xE2\x86\xB3 Configuration de fastfetch "
+	if [[ "$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)" == ThinkPad* ]]; then
+		cp -r "./assets/fastfetch/thinkpad/" "$USER_HOME/.config/fastfetch"
+	else
+		cp -r "./assets/fastfetch/default/" "$USER_HOME/.config/fastfetch"
+	fi
+	chown -R "$SUDO_USER:$SUDO_USER" "$USER_HOME/.config/fastfetch"
+	check_cmd
+fi
 
 ## Bluetooth
 if [[ -e "/etc/bluetooth/main.conf" ]]; then
