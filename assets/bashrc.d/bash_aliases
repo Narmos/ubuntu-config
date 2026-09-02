@@ -1,0 +1,29 @@
+##########
+## BIOS ##
+##########
+## Show bios version
+alias bios='sudo dmidecode -s bios-version'
+## Reboot in bios
+alias rebios='sudo systemctl  reboot -i --firmware-setup'
+
+############
+## SYSTEM ##
+############
+## Update system
+alias sysupdate='sys-update'
+## Show kernel version
+alias kernel='uname -r'
+## Show OS version
+alias os='cat /etc/os-release'
+## Show system infos
+if [[ "$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)" == ThinkPad* ]]; then
+	alias ff='fastfetch -l ~/.config/fastfetch/thinkpad-v.txt'
+else
+	alias ff='fastfetch'
+fi
+
+#########
+## DEV ##
+#########
+alias gh='cd ~/Code/GitHub && ls'
+alias docker='podman'

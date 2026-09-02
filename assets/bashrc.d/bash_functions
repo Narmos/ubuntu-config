@@ -1,0 +1,35 @@
+# System update
+sys-update() {
+    sudo echo &> /dev/null
+
+    if command -v apt &> /dev/null; then
+        echo -e "\n[APT]"
+        echo
+        sudo apt update && sudo apt full-upgrade -y && sudo apt autoremove --purge -y
+    fi
+    
+    if command -v dnf &> /dev/null; then
+        echo -e "\n[DNF]"
+        echo
+        yes n | sudo dnf upgrade
+    fi
+
+    # Snap
+    if command -v snap &> /dev/null; then
+        echo -e "\n[Snap]"
+        echo
+        sudo snap refresh
+    fi
+
+    # Flatpak
+    if command -v flatpak &> /dev/null; then
+        echo -e "\n[Flatpak]"
+        sudo flatpak update --noninteractive && sudo flatpak uninstall --unused --noninteractive
+    fi
+}
+
+# Extract shortcut
+ext () { 7z x "$1";}
+
+# Debian Backports install
+bpi () { sudo apt install -t trixie-backports "$1"; }

@@ -425,6 +425,17 @@ if [[ ! -d "$USER_HOME/.config/fastfetch" ]]; then
 	check_cmd
 fi
 
+## Bash
+if [[ ! -d "$USER_HOME/.bashrc.d" ]]; then
+	echo -e -n " \xE2\x86\xB3 Ajout des alias et fonctions Bash dans ~/.bashrc.d "
+	cp -r "./assets/bashrc.d/" "$USER_HOME/.bashrc.d"
+	chown -R "$SUDO_USER:$SUDO_USER" "$USER_HOME/.bashrc.d"
+	check_cmd
+	echo -e -n " \xE2\x86\xB3 Import des fichiers de ~/.bashrc.d dans .bashrc "
+	sudo -u "$SUDO_USER" cat "./assets/bashrc" >> "$USER_HOME/.bashrc"
+	check_cmd
+fi
+
 ## Bluetooth
 if [[ -e "/etc/bluetooth/main.conf" ]]; then
 	if ! grep -q "^[[:space:]]*AutoEnable=false" "/etc/bluetooth/main.conf"; then
