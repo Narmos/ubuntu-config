@@ -1,19 +1,11 @@
-##########
-## BIOS ##
-##########
 ## Show bios version
 alias bios='sudo dmidecode -s bios-version'
 ## Reboot in bios
-alias rebios='sudo systemctl  reboot -i --firmware-setup'
+alias rebios='sudo systemctl reboot -i --firmware-setup'
 
-############
-## SYSTEM ##
-############
-## Update system
-alias sysupdate='sys-update'
 ## Show kernel version
 alias kernel='uname -r'
-## Show OS version
+## Show OS infos
 alias os='cat /etc/os-release'
 ## Show system infos
 if [[ "$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)" == ThinkPad* ]]; then
@@ -22,8 +14,10 @@ else
 	alias ff='fastfetch'
 fi
 
-#########
-## DEV ##
-#########
+## Update the system
+alias sysupdate='sys-update'
+
+## Quick access to GitHub projects
 alias gh='cd ~/Code/GitHub && ls'
+## Using the 'docker' command for Podman
 alias docker='podman'
