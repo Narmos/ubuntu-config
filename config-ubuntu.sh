@@ -265,16 +265,16 @@ if ! check_apt_repo mozilla.sources; then
 	wget -qO - https://packages.mozilla.org/apt/repo-signing-key.gpg \
 	| gpg --dearmor -o /etc/apt/keyrings/mozilla-archive-keyring.gpg
 	echo -e 'Types: deb\nURIs: https://packages.mozilla.org/apt\nSuites: mozilla\nComponents: main\nSigned-by: /etc/apt/keyrings/mozilla-archive-keyring.gpg' \
-	| sudo tee /etc/apt/sources.list.d/mozilla.sources
+	| sudo tee /etc/apt/sources.list.d/mozilla.sources > /dev/null 2>&1
 	check_cmd
 
 	# On priorise les paquets depuis le dépôt Mozilla
 	echo -e 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000' \
-	| sudo tee /etc/apt/preferences.d/mozilla
+	| sudo tee /etc/apt/preferences.d/mozilla > /dev/null 2>&1
 
 	# On bloque l'installation de Firefox via Snap
 	echo -e 'Package: firefox*\nPin: release o=Ubuntu*\nPin-Priority: -1' \
-	| sudo tee /etc/apt/preferences.d/no-firefox-snap-please
+	| sudo tee /etc/apt/preferences.d/no-firefox-snap-please > /dev/null 2>&1
 
 	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
 	refresh_apt_cache
@@ -287,7 +287,7 @@ if ! check_apt_repo vscode.sources; then
 	wget -qO - https://packages.microsoft.com/keys/microsoft.asc \
 	| gpg --dearmor -o /etc/apt/keyrings/microsoft-archive-keyring.gpg
 	echo -e 'Types: deb\nURIs: https://packages.microsoft.com/repos/code\nSuites: stable\nComponents: main\nArchitectures: amd64\nSigned-by: /etc/apt/keyrings/microsoft-archive-keyring.gpg' \
-	| sudo tee /etc/apt/sources.list.d/vscode.sources
+	| sudo tee /etc/apt/sources.list.d/vscode.sources > /dev/null 2>&1
 	check_cmd
 	
 	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
@@ -299,7 +299,7 @@ fi
 if $FLATPAK; then
 	if [[ $(flatpak remotes | grep -c flathub) -ne 1 ]]; then
 		echo -e -n " \xE2\x86\xB3 Ajout du dépôt Flatpak : Flathub "
-		flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo > /dev/null
+		flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo > /dev/null 2>&1
 		check_cmd
 	fi
 fi
