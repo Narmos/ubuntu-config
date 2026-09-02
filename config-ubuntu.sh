@@ -21,10 +21,8 @@ fi
 #################
 check_cmd() {
 	if [[ $? -eq 0 ]]; then
-		#echo -e "\033[32mOK\033[0m"
 		echo -e "\033[32m\xE2\x9C\x94\033[0m" # vu vert
 	else
-		#echo -e "\033[31mERREUR\033[0m"
 		echo -e "\033[31m\xE2\x9D\x8C\033[0m" # croix rouge
 	fi
 }
@@ -35,7 +33,7 @@ refresh_apt_cache() {
 }
 
 check_apt_repo() {
-	if [ -e /etc/apt/sources.list.d/$1 ]; then
+	if [[ -e /etc/apt/sources.list.d/$1 ]]; then
 		return 0
 	else
 		return 1
@@ -96,7 +94,7 @@ del_flatpak_pkg() {
 }
 
 need_reboot() {
-	if [ -e /var/run/reboot-required ]; then
+	if [[ -e /var/run/reboot-required ]]; then
 		return 0
 	else
 		return 1
@@ -172,7 +170,7 @@ if [[ "$1" = "check" ]]; then
 	refresh_apt_cache
 	check_cmd
 
-	echo -e "\033[1mMises à jour disponibles DEB : \033[0m"
+	echo -e "\033[1mMises à jour disponibles APT : \033[0m"
 	check_apt_updates
 
 	echo
@@ -213,7 +211,7 @@ refresh_apt_cache
 check_cmd
 
 ## MAJ des paquets DEB
-echo -e -n " \xE2\x86\xB3 Mise à jour des paquets DEB "
+echo -e -n " \xE2\x86\xB3 Mise à jour des paquets "
 apt-get dist-upgrade -y >> "$LOGFILE" 2>&1
 check_cmd
 
@@ -229,8 +227,8 @@ if $SNAP; then
 	fi
 
 	## MAJ des paquets Snap
-	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets Snap "
-	snap refresh >> "$LOGFILE"  2>&1
+	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets "
+	snap refresh >> "$LOGFILE" 2>&1
 	check_cmd
 fi
 
@@ -246,7 +244,7 @@ if $FLATPAK; then
 	fi
 
 	## MAJ des paquets Flatpak
-	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets Flatpak "
+	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets "
 	flatpak update --noninteractive >> "$LOGFILE" 2>&1
 	check_cmd
 fi
@@ -261,7 +259,7 @@ echo -e "\033[1mConfiguration des dépôts\033[0m"
 
 ## AJOUT dépôt pour Firefox
 if ! check_apt_repo mozilla.sources; then
-	echo -e -n " \xE2\x86\xB3 Ajout du dépôt DEB : Firefox "
+	echo -e -n " \xE2\x86\xB3 Ajout du dépôt APT : Mozilla (Firefox) "
 	wget -qO - https://packages.mozilla.org/apt/repo-signing-key.gpg \
 	| gpg --dearmor -o /etc/apt/keyrings/mozilla-archive-keyring.gpg
 	echo -e 'Types: deb\nURIs: https://packages.mozilla.org/apt\nSuites: mozilla\nComponents: main\nSigned-by: /etc/apt/keyrings/mozilla-archive-keyring.gpg' \
@@ -283,7 +281,7 @@ fi
 
 ## AJOUT dépôt pour VSCode
 if ! check_apt_repo vscode.sources; then
-	echo -e -n " \xE2\x86\xB3 Ajout du dépôt DEB : VSCode "
+	echo -e -n " \xE2\x86\xB3 Ajout du dépôt APT : VS Code "
 	wget -qO - https://packages.microsoft.com/keys/microsoft.asc \
 	| gpg --dearmor -o /etc/apt/keyrings/microsoft-archive-keyring.gpg
 	echo -e 'Types: deb\nURIs: https://packages.microsoft.com/repos/code\nSuites: stable\nComponents: main\nArchitectures: amd64\nSigned-by: /etc/apt/keyrings/microsoft-archive-keyring.gpg' \
@@ -309,7 +307,7 @@ echo -e "\033[1mRemplacement de Snap forcé par Ubuntu\033[0m"
 
 ## Firefox
 if check_snap_pkg "firefox"; then
-	echo -e " \xE2\x86\xB3 Remplacement du Snap Firefox par le paquet DEB "
+	echo -e " \xE2\x86\xB3 Remplacement du Snap Firefox par le paquet du dépôt APT Mozilla "
 	echo -e -n "  \xE2\x86\xB3 Suppression du Snap : firefox "
 	del_snap_pkg "firefox"
 	check_cmd
@@ -328,7 +326,7 @@ if check_snap_pkg "firefox"; then
 fi
 
 ### INSTALL/SUPPRESSION DEB
-echo -e "\033[1mGestion des paquets DEB\033[0m"
+echo -e "\033[1mGestion des paquets APT\033[0m"
 ## Selon packages.list
 while read -r line; do
 	if [[ "$line" == add:* ]]; then
