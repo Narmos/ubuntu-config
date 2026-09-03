@@ -259,11 +259,11 @@ echo -e "\033[1mConfiguration des dépôts\033[0m"
 
 ## Firefox
 if ! check_apt_repo mozilla.sources; then
-	echo -e -n " \xE2\x86\xB3 Configuration du dépôt APT : Mozilla (Firefox) "
+	echo -e " \xE2\x86\xB3 Configuration du dépôt APT : Mozilla (Firefox) "
 
 	echo -e -n "  \xE2\x86\xB3 Import de la clé de signature du dépôt "
 	wget -qO - https://packages.mozilla.org/apt/repo-signing-key.gpg \
-	| gpg --dearmor -o /etc/apt/keyrings/packages.mozilla.org.asc
+	| gpg --dearmor -o /etc/apt/keyrings/packages.mozilla.org.gpg
 	check_cmd
 
 	echo -e -n "  \xE2\x86\xB3 Ajout du dépôt "
@@ -281,7 +281,7 @@ fi
 
 ## VS Code
 if ! check_apt_repo vscode.sources; then
-	echo -e -n " \xE2\x86\xB3 Configuration du dépôt APT : VS Code "
+	echo -e " \xE2\x86\xB3 Configuration du dépôt APT : VS Code "
 	
 	echo -e -n "  \xE2\x86\xB3 Import de la clé de signature du dépôt "
 	wget -qO - https://packages.microsoft.com/keys/microsoft.asc \

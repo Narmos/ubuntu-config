@@ -2,4 +2,4 @@ Types: deb
 URIs: https://packages.mozilla.org/apt
 Suites: mozilla
 Components: main
-Signed-By: /etc/apt/keyrings/packages.mozilla.org.asc
+Signed-By: /etc/apt/keyrings/packages.mozilla.org.gpg
