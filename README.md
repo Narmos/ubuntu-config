@@ -1,60 +1,77 @@
-# ubuntu-config
+# Ma configuration Ubuntu
 
-Ma configuration d'Ubuntu (base Ubuntu Desktop). Configure & met à jour Ubuntu.
+Script d'automatisation pour configurer et mettre à jour mon système Ubuntu (base Ubuntu Desktop Minimal).
 
-Versions testées : 24.04 LTS > 26.04 LTS
+> [!NOTE]
+> Ce script est conçu exclusivement pour **Ubuntu Desktop** utilisant l'environnement de bureau **GNOME**.
 
-**Ne fonctionne qu'avec Ubuntu Desktop disposant de l'environnement de bureau GNOME.**
+---
 
-# Guide
+## 🧪 Versions testées
+* Ubuntu 26.04 LTS
+* Ubuntu 24.04 LTS
 
-## Liste des fichiers
+---
 
- **config-ubuntu.sh** : Script principal
+## 🔍 Ce que fait le script
 
- **packages.list** : Fichier de paquets DEB à ajouter ou retirer du système
+1. Configure le système APT et met à jour les paquets
+2. Configure le système Snap et met à jour les paquets
+3. Configure le système Flatpak et met à jour les paquets
+4. Configure les dépôts APT et Flatpak additionnels
+5. Remplace les Snaps forcés par Ubuntu
+6. Ajoute ou supprime les paquets deb spécifiés dans `packages.list`
+7. Ajoute ou supprime les paquets snap spécifiés dans `snap.list`
+8. Ajoute ou supprime les paquets flatpak spécifiés dans `flatpak.list`
+9. Personnalise la configuration du système
 
- **snap.list** : Fichier de Snap à ajouter ou retirer du système
+---
 
- **flatpak.list** : Fichier de Flatpak à ajouter ou retirer du système
+## 📁 Structure
 
-## Fonctionnement
+```bash
+.
+├── assets/               # Ressources à copier sur le système
+├── config-ubuntu.sh      # Script principal
+├── flatpak.list          # Liste des paquets Flatpak à installer/désinstaller
+├── packages.list         # Liste des paquets Deb à installer/désinstaller
+└── snap.list             # Liste des paquets Snap à installer/désinstaller
+```
 
-Les fichiers mentionnés ci-dessus doivent être dans le même dossier.
+---
 
-> **Remarque :** par défaut, le script installe Flatpak. Pour désactiver Flatpak, modifier la variable `FLATPAK=true` en `FLATPAK=false` dans le fichier `config-ubuntu.sh`
+## 🚀 Usage
 
-Exécuter avec les droits de super-utilisateur le script principal :
+### 1. Configuration de Flatpak (Optionnel)
+Par défaut, le script installe et gère le système de paquets Flatpak. Pour désactiver Flatpak, ouvrez le fichier `config-ubuntu.sh` et modifiez la variable suivante :
+```bash
+FLATPAK=false
+```
 
-    sudo ./config-ubuntu.sh
+> [!IMPORTANT]
+> A faire avant le premier lancement du script !
 
-Celui-ci peut être exécuté plusieurs fois de suite. Si des étapes sont déjà configurées, elles ne le seront pas à nouveau. De fait, le script peut être utilisé pour :
+### 2. Exécution du script
+Ouvrez votre terminal dans le dossier du dépôt, autorisez l'exécution du script et lancez-le avec les privilèges de super-utilisateur :
+```bash
+chmod +x config-ubuntu.sh
+sudo ./config-ubuntu.sh
+```
 
- - Réaliser la configuration initiale du système
- - Mettre à jour la configuration du système
- - Effectuer les mises à jour des paquets
+### 3. Mode vérification de mises à jour
+Il est possible de faire uniquement une vérification des mises à jour (listing des paquets deb, snap et flatpak à mettre à jour sans appliquer de modifications) via l'option `check` :
+```bash
+sudo ./config-ubuntu.sh check
+```
 
-Il est possible de faire uniquement une vérification des mises à jour (listing des paquets, snap et flatpak à mettre à jour sans appliquer de modifications) via l'option check :
+### 4. Utilisation pour la maintenance
+Ce script est idempotent. Vous pouvez l'exécuter plusieurs fois de suite; les étapes déjà configurées seront simplement ignorées. De fait, le script peut être utilisé pour :
+* **Configuration initiale** du système après une installation fraîche
+* **Mise à jour** de la configuration et des listes de paquets
+* **Mise à jour globale** de tous les paquets du système
 
-    sudo ./config-ubuntu.sh check
+---
 
-## Opérations réalisées par le script
+## 🙏 Crédits
 
-Le script lancé va effectuer les opérations suivantes :
-
-- Configurer le système APT
-    - Mettre à jour les paquets DEB
-- Configurer le système Snap
-    - Mettre à jour les paquets Snap
-- Configurer le système Flatpak *(si activé)*
-    - Installer les paquets requis pour Flatpak
-    - Mettre à jour les paquets Flatpak + *Proposition de redémarrage du système si nécessaire*
-- Ajouter les dépôts additionnels APT / Flatpak *(si activé)*
-- Ajouter ou Supprimer les paquets DEB paramétrés dans le fichier packages.list
-- Ajouter ou Supprimer les paquets Snap paramétrés dans le fichier snap.list 
-- Ajouter ou Supprimer les paquets Flatpak paramétrés dans le fichier flatpak.list *(si activé)*
-- Personnaliser la configuration du système + *Proposition de redémarrage du système si nécessaire*
-
-# Crédits
-
-Ce script est basé sur [celui](https://github.com/aaaaadrien/fedora-config) d'Adrien de [linuxtricks.fr](https://www.linuxtricks.fr)
+Ce script est inspiré du [travail initial](https://github.com/aaaaadrien/fedora-config) d'Adrien de [linuxtricks.fr](https://www.linuxtricks.fr)

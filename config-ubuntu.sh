@@ -204,7 +204,7 @@ echo '-------------------' >> "$LOGFILE"
 date >> "$LOGFILE"
 
 ### CONFIG système APT
-echo -e "\033[1mConfiguration du système APT\033[0m"
+echo -e "\033[1m[01] Configuration du système APT\033[0m"
 
 echo -e -n " \xE2\x86\xB3 Refresh du cache "
 refresh_apt_cache
@@ -217,7 +217,7 @@ check_cmd
 
 ### CONFIG système Snap
 if $SNAP; then
-	echo -e "\033[1mConfiguration du système Snap\033[0m"
+	echo -e "\033[1m[02] Configuration du système Snap\033[0m"
 
 	## INSTALL paquet requis pour système Snap
 	if ! check_apt_pkg "snapd"; then
@@ -234,7 +234,7 @@ fi
 
 ### CONFIG système Flatpak
 if $FLATPAK; then
-	echo -e "\033[1mConfiguration du système Flatpak\033[0m"
+	echo -e "\033[1m[03] Configuration du système Flatpak\033[0m"
 
 	## INSTALL paquet requis pour système Flatpak
 	if ! check_apt_pkg "flatpak"; then
@@ -255,7 +255,7 @@ if need_reboot; then
 fi
 
 ### CONFIG des dépôts
-echo -e "\033[1mConfiguration des dépôts\033[0m"
+echo -e "\033[1m[04] Configuration des dépôts\033[0m"
 
 ## Firefox
 if ! check_apt_repo mozilla.sources; then
@@ -307,7 +307,7 @@ if $FLATPAK; then
 fi
 
 ### REMPLACEMENT Snap
-echo -e "\033[1mRemplacement de Snap forcé par Ubuntu\033[0m"
+echo -e "\033[1m[05] Remplacement de Snap forcé par Ubuntu\033[0m"
 
 ## Firefox
 if check_snap_pkg "firefox"; then
@@ -330,7 +330,7 @@ if check_snap_pkg "firefox"; then
 fi
 
 ### INSTALL/SUPPRESSION DEB
-echo -e "\033[1mGestion des paquets APT\033[0m"
+echo -e "\033[1m[06] Gestion des paquets APT\033[0m"
 ## Selon packages.list
 while read -r line; do
 	if [[ "$line" == add:* ]]; then
@@ -354,7 +354,7 @@ done < "$CURRENTPATH/packages.list"
 
 ### INSTALL/SUPPRESSION Snap
 if $SNAP; then
-	echo -e "\033[1mGestion des paquets Snap\033[0m"
+	echo -e "\033[1m[07] Gestion des paquets Snap\033[0m"
 	## Selon snap.list
 	while read -r line
 	do
@@ -389,7 +389,7 @@ fi
 
 ### INSTALL/SUPPRESSION Flatpak
 if $FLATPAK; then
-	echo -e "\033[1mGestion des paquets Flatpak\033[0m"
+	echo -e "\033[1m[08] Gestion des paquets Flatpak\033[0m"
 	## Selon flatpak.list
 	while read -r line; do
 		if [[ "$line" == add:* ]]; then
@@ -413,7 +413,7 @@ if $FLATPAK; then
 fi
 
 ### CONFIG système
-echo -e "\033[1mConfiguration personnalisée du système\033[0m"
+echo -e "\033[1m[09] Configuration personnalisée du système\033[0m"
 
 ## Fastfetch
 if check_apt_pkg "fastfetch" && [[ ! -d "$USER_HOME/.config/fastfetch" ]]; then
