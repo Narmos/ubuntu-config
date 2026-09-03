@@ -416,7 +416,7 @@ fi
 echo -e "\033[1mConfiguration personnalisée du système\033[0m"
 
 ## Fastfetch
-if [[ ! -d "$USER_HOME/.config/fastfetch" ]]; then
+if check_apt_pkg "fastfetch" && [[ ! -d "$USER_HOME/.config/fastfetch" ]]; then
 	echo -e -n " \xE2\x86\xB3 Configuration de fastfetch "
 	if [[ "$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)" == ThinkPad* ]]; then
 		fastfetch_config="thinkpad"
