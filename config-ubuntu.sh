@@ -257,35 +257,39 @@ fi
 ### CONFIG des dépôts
 echo -e "\033[1mConfiguration des dépôts\033[0m"
 
-## AJOUT dépôt pour Firefox
+## Firefox
 if ! check_apt_repo mozilla.sources; then
-	echo -e -n " \xE2\x86\xB3 Ajout du dépôt APT : Mozilla (Firefox) "
+	echo -e -n " \xE2\x86\xB3 Configuration du dépôt APT : Mozilla (Firefox) "
+
+	echo -e -n "  \xE2\x86\xB3 Import de la clé de signature du dépôt "
 	wget -qO - https://packages.mozilla.org/apt/repo-signing-key.gpg \
-	| gpg --dearmor -o /etc/apt/keyrings/mozilla-archive-keyring.gpg
-	echo -e 'Types: deb\nURIs: https://packages.mozilla.org/apt\nSuites: mozilla\nComponents: main\nSigned-by: /etc/apt/keyrings/mozilla-archive-keyring.gpg' \
-	| sudo tee /etc/apt/sources.list.d/mozilla.sources > /dev/null 2>&1
+	| gpg --dearmor -o /etc/apt/keyrings/packages.mozilla.org.asc
 	check_cmd
 
-	# On priorise les paquets depuis le dépôt Mozilla
-	echo -e 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000' \
-	| sudo tee /etc/apt/preferences.d/mozilla > /dev/null 2>&1
+	echo -e -n "  \xE2\x86\xB3 Ajout du dépôt "
+	sudo cp "./assets/apt/sources.list.d/mozilla.sources" "/etc/apt/sources.list.d/"
+	check_cmd
 
-	# On bloque l'installation de Firefox via Snap
-	echo -e 'Package: firefox*\nPin: release o=Ubuntu*\nPin-Priority: -1' \
-	| sudo tee /etc/apt/preferences.d/no-firefox-snap-please > /dev/null 2>&1
+	echo -e -n "  \xE2\x86\xB3 Priorisation du dépôt "
+	sudo cp "./assets/apt/preferences.d/mozilla" "/etc/apt/preferences.d/"
+	check_cmd
 
 	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
 	refresh_apt_cache
 	check_cmd
 fi
 
-## AJOUT dépôt pour VSCode
+## VS Code
 if ! check_apt_repo vscode.sources; then
-	echo -e -n " \xE2\x86\xB3 Ajout du dépôt APT : VS Code "
+	echo -e -n " \xE2\x86\xB3 Configuration du dépôt APT : VS Code "
+	
+	echo -e -n "  \xE2\x86\xB3 Import de la clé de signature du dépôt "
 	wget -qO - https://packages.microsoft.com/keys/microsoft.asc \
-	| gpg --dearmor -o /etc/apt/keyrings/microsoft-archive-keyring.gpg
-	echo -e 'Types: deb\nURIs: https://packages.microsoft.com/repos/code\nSuites: stable\nComponents: main\nArchitectures: amd64\nSigned-by: /etc/apt/keyrings/microsoft-archive-keyring.gpg' \
-	| sudo tee /etc/apt/sources.list.d/vscode.sources > /dev/null 2>&1
+	| gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
+	check_cmd
+	
+	echo -e -n "  \xE2\x86\xB3 Ajout du dépôt "
+	sudo cp "./assets/apt/sources.list.d/vscode.sources" "/etc/apt/sources.list.d/"
 	check_cmd
 	
 	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
@@ -293,10 +297,10 @@ if ! check_apt_repo vscode.sources; then
 	check_cmd
 fi
 
-## AJOUT dépôt Flatpak Flathub
+## Flathub
 if $FLATPAK; then
 	if [[ $(flatpak remotes | grep -c flathub) -ne 1 ]]; then
-		echo -e -n " \xE2\x86\xB3 Ajout du dépôt Flatpak : Flathub "
+		echo -e -n " \xE2\x86\xB3 Configuration du dépôt Flatpak : Flathub "
 		flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo > /dev/null 2>&1
 		check_cmd
 	fi
