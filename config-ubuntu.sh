@@ -415,10 +415,11 @@ echo -e "\033[1mConfiguration personnalisée du système\033[0m"
 if [[ ! -d "$USER_HOME/.config/fastfetch" ]]; then
 	echo -e -n " \xE2\x86\xB3 Configuration de fastfetch "
 	if [[ "$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)" == ThinkPad* ]]; then
-		cp -r "./assets/fastfetch/thinkpad/" "$USER_HOME/.config/fastfetch"
+		fastfetch_config="thinkpad"
 	else
-		cp -r "./assets/fastfetch/default/" "$USER_HOME/.config/fastfetch"
+		fastfetch_config="default"
 	fi
+	cp -r "./assets/fastfetch/${fastfetch_config}/" "$USER_HOME/.config/fastfetch" && \
 	chown -R "$SUDO_USER:$SUDO_USER" "$USER_HOME/.config/fastfetch"
 	check_cmd
 fi
@@ -426,11 +427,11 @@ fi
 ## Bash
 if [[ ! -d "$USER_HOME/.bashrc.d" ]]; then
 	echo -e -n " \xE2\x86\xB3 Ajout des alias et fonctions Bash dans ~/.bashrc.d "
-	cp -r "./assets/bashrc.d/" "$USER_HOME/.bashrc.d"
+	cp -r "./assets/bash/bashrc.d/" "$USER_HOME/.bashrc.d" && \
 	chown -R "$SUDO_USER:$SUDO_USER" "$USER_HOME/.bashrc.d"
 	check_cmd
 	echo -e -n " \xE2\x86\xB3 Import des fichiers de ~/.bashrc.d dans .bashrc "
-	sudo -u "$SUDO_USER" cat "./assets/bashrc" >> "$USER_HOME/.bashrc"
+	sudo -u "$SUDO_USER" cat "./assets/bash/bashrc" >> "$USER_HOME/.bashrc"
 	check_cmd
 fi
 
