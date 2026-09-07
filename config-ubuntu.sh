@@ -1,457 +1,552 @@
 #!/usr/bin/env bash
 
+# Le script se termine si une variable non initialisée est utilisée
+set -u
+
 #################
 ### VARIABLES ###
 #################
-CURRENTPATH=$(dirname "$0")
-USER_HOME=$(eval echo ~$SUDO_USER)
-FLATPAK=true
-SNAP=true
-LOGFILE="/tmp/config-ubuntu.log"
 
-# RECUP les infos sur la distribution pour vérification
-if [[ -e /etc/os-release ]]; then
-	os_release="/etc/os-release"
-	. "${os_release}"
-	echo "Distribution : ${PRETTY_NAME}"
+# Pour affichage texte enrichi dans le terminal
+TXT_BOLD="\033[1m"
+TXT_RED="\033[31m"
+TXT_GREEN="\033[32m"
+TXT_YELLOW="\033[33m"
+TXT_CYAN="\033[36m"
+TXT_RESET="\033[0m"
+
+# Chemin et nom du script
+SCRIPT_PATH=$(dirname "$0")
+SCRIPT_NAME=$(basename "$0")
+
+# Utilisateur courant et son chemin (home)
+CURRENT_USER=${SUDO_USER:-$(logname)}
+USER_PATH="/home/$CURRENT_USER"
+
+# Chemin des ressources du script
+ASSETS_PATH="$SCRIPT_PATH/assets"
+
+# Fichier de log du script
+LOG_FILE="/tmp/config-ubuntu.log"
+
+# Status de la gestion des paquets Flatpak (défini)
+IS_FLATPAK_ENABLED="true"
+
+# Status de la gestion des paquets Snap (récupéré)
+if dpkg-query --status "snapd" &>/dev/null; then
+	IS_SNAP_ENABLED="true"
+else
+	IS_SNAP_ENABLED="false"
 fi
+
+# Modèle de l'ordinateur
+HARDWARE_MODEL=$(hostnamectl | sed -n 's/^ *Hardware Model: //p')
+
+# Configuration de Fastfetch à utiliser selon modèle de l'ordinateur
+if [[ "$HARDWARE_MODEL" == "ThinkPad"* ]]; then
+	FASTFETCH_CONFIG="thinkpad"
+else
+	FASTFETCH_CONFIG="default"
+fi
+
+# Informations sur la distribution
+if [[ -e "/etc/os-release" ]]; then
+	OS_RELEASE="/etc/os-release"
+	# Lit le fichier contenant des variables et les défini dans le script préfixées de OSR_
+	eval "$(sed 's/^/OSR_/' "${OS_RELEASE}")"
+	echo
+	echo -e "${TXT_BOLD}Distribution :${TXT_RESET} ${OSR_PRETTY_NAME:-Inconnue}"
+	echo
+else
+	echo
+	echo -e "${TXT_RED}${TXT_BOLD}ERREUR⤳${TXT_RESET} Impossible de récupérer les informations sur la distribution utilisée !"
+	echo
+	exit 1
+fi
+
+#####################
+### FIN VARIABLES ###
+#####################
 
 #################
 ### FONCTIONS ###
 #################
+
 check_cmd() {
 	if [[ $? -eq 0 ]]; then
-		echo -e "\033[32m\xE2\x9C\x94\033[0m" # vu vert
+		echo -e "${TXT_GREEN}✔${TXT_RESET}"
 	else
-		echo -e "\033[31m\xE2\x9D\x8C\033[0m" # croix rouge
+		echo -e "${TXT_RED}✖${TXT_RESET}"
 	fi
 }
 
+ask_update() {
+	echo
+	echo -e -n "${TXT_CYAN}Voulez-vous lancer les MàJ maintenant ? [o/N] : ${TXT_RESET}"
+
+	local response
+	read -r response
+	response="${response:-n}"
+
+	if [[ "${response,,}" =~ ^[oy]$ ]]; then
+		clear -x
+		exec bash "$0"
+	fi
+	echo
+}
+
+need_reboot() {
+	[[ -f "/var/run/reboot-required" ]]
+}
+
+ask_reboot() {
+	echo
+	echo -e -n "${TXT_YELLOW}REDÉMARRAGE NÉCESSAIRE : Voulez-vous redémarrer le système maintenant ? [o/N] : ${TXT_RESET}"
+	
+	local response
+	read -r response
+	response="${response:-n}"
+	
+	if [[ "${response,,}" =~ ^[oy]$ ]]; then
+		echo
+		echo -e "${TXT_CYAN} ⟳ reboot via systemd... ${TXT_RESET}"
+		echo
+		sleep 2
+		systemctl reboot
+		exit 0
+	fi
+	echo
+}
+
+### Gestionnaire de paquets APT
+
 refresh_apt_cache() {
-	apt-get clean > /dev/null 2>&1
-	apt-get update > /dev/null 2>&1
+	apt-get clean &>/dev/null
+	apt-get update &>/dev/null
 }
 
 check_apt_repo() {
-	if [[ -e /etc/apt/sources.list.d/$1 ]]; then
-		return 0
-	else
-		return 1
-	fi
+	[[ -f "/etc/apt/sources.list.d/${1:-}" ]]
+}
+
+check_apt_pref() {
+	[[ -f "/etc/apt/preferences.d/${1:-}" ]]
 }
 
 check_apt_updates() {
-	yes n | apt-get dist-upgrade
+	apt-get dist-upgrade --simulate
 }
 
 check_apt_pkg() {
-	dpkg-query --status "$1" > /dev/null 2>&1
+	dpkg-query --status "${1:-}" &>/dev/null
 }
 
 add_apt_pkg() {
-	apt-get install -y "$1" >> "$LOGFILE" 2>&1
+	apt-get install -y "${1:-}" &>> "$LOG_FILE"
 }
 
 del_apt_pkg() {
-	apt-get autoremove --purge -y "$1" >> "$LOGFILE" 2>&1
+	apt-get autoremove --purge -y "${1:-}" &>> "$LOG_FILE"
 }
+
+### Gestionnaire de paquets Snap
 
 check_snap_updates() {
 	snap refresh --list
 }
 
 check_snap_pkg() {
-	snap list "$1" > /dev/null 2>&1
+	snap list "${1:-}" &>/dev/null
 }
 
 add_snap_pkg() {
-	snap install "$1" > /dev/null 2>&1
+	snap install "${1:-}" &>> "$LOG_FILE"
 }
 
 add_snap_classic_pkg() {
-	snap install --classic "$1" > /dev/null 2>&1
+	snap install --classic "${1:-}" &>> "$LOG_FILE"
 }
 
 del_snap_pkg() {
-	snap remove --purge "$1" > /dev/null 2>&1
+	snap remove --purge "${1:-}" &>> "$LOG_FILE"
 }
+
+### Gestionnaire de paquets Flatpak
 
 check_flatpak_updates() {
 	yes n | flatpak update
 }
 
 check_flatpak_pkg() {
-	flatpak info "$1" > /dev/null 2>&1
+	flatpak info "${1:-}" &>/dev/null
 }
 
 add_flatpak_pkg() {
-	flatpak install flathub --noninteractive -y "$1" > /dev/null 2>&1
+	flatpak install flathub --noninteractive -y "${1:-}" &>> "$LOG_FILE"
 }
 
 del_flatpak_pkg() {
-	flatpak uninstall --noninteractive -y "$1" > /dev/null 2>&1
-	flatpak uninstall --unused --noninteractive -y > /dev/null 2>&1
+	flatpak uninstall --noninteractive -y "${1:-}" &>> "$LOG_FILE"
+	flatpak uninstall --unused --noninteractive -y &>> "$LOG_FILE"
 }
 
-need_reboot() {
-	if [[ -e /var/run/reboot-required ]]; then
-		return 0
-	else
-		return 1
-	fi
-}
-
-ask_reboot() {
-	echo -n -e "\033[5;33mREDÉMARRAGE NÉCESSAIRE\033[0m\033[33m : Voulez-vous redémarrer le système maintenant ? [o/N] : \033[0m"
-	read rebootuser
-	rebootuser=${rebootuser:-n}
-	if [[ ${rebootuser,,} =~ ^[oOyY]$ ]]; then
-		echo -e "\n\033[0;35m Reboot via systemd ... \033[0m"
-		sleep 2
-		systemctl reboot
-		exit
-	fi
-}
-
-ask_update() {
-	echo -n -e "\n\033[36mVoulez-vous lancer les MàJ maintenant ? [o/N] : \033[0m"
-	read startupdate
-	startupdate=${startupdate:-n}
-	echo
-	if [[ ${startupdate,,} =~ ^[oOyY]$ ]]; then
-		clear -x
-		bash "$0"
-	fi
-}
+#####################
+### FIN FONCTIONS ###
+#####################
 
 ####################
 ### DEBUT SCRIPT ###
 ####################
-### VERIF option du script
-if [[ -z "$1" ]]; then
-	echo "OK" > /dev/null
-elif [[ "$1" == "check" ]]; then
-	echo "OK" > /dev/null
-else
-	echo -e "\033[31mERREUR\033[0m Usage incorrect du script"
-	echo "$(basename $0)         : Lance la config et/ou les mises à jour"
-	echo "$(basename $0) check   : Vérifie les mises à jour disponibles et propose de les lancer"
-	exit 1;
-fi
 
-### VERIF si root
-if [[ $(id -u) -ne "0" ]]; then
-	echo -e "\033[31mERREUR\033[0m Lancer le script avec les droits root (su - root ou sudo)"
-	exit 1;
-fi
+### VERIFICATION PRÉLIMINAIRES
 
-### VERIF si bien Ubuntu Desktop
-if ! check_apt_pkg ubuntu-desktop && ! check_apt_pkg ubuntu-desktop-minimal; then
-	echo -e "\033[31mERREUR\033[0m Seule Ubuntu Desktop (GNOME) est supportée !"
-	exit 2;
-fi
+## Paramètres du script
+case "${1:-}" in
+	""|"check")
+		# Paramètre valide (vide ou "check"), on laisse le script continuer normalement
+		;;
+	*)
+		# Tout autre paramètre déclenche l'erreur d'usage
+		echo -e "${TXT_RED}${TXT_BOLD}ERREUR⤳${TXT_RESET} Usage incorrect du script !"
+		echo "${SCRIPT_NAME}       : Lance la config et/ou les mises à jour"
+		echo "${SCRIPT_NAME} check : Vérifie les mises à jour disponibles et propose de les lancer"
+		echo
+		exit 1
+		;;
+esac
 
-### VERIF gestion Snap
-if check_apt_pkg snapd && ! $SNAP; then
-	echo -e "\033[5;33mATTENTION\033[0m\033[33m Le système Snap est installé mais sa gestion via ce script est désactivée !\033[0m"
-	echo -e "Pour gérer les Snaps, remplacer la variable SNAP=false par SNAP=true au début du script $(basename $0)"
-fi
-
-### VERIF gestion Flatpak
-if check_apt_pkg flatpak && ! $FLATPAK; then
-	echo -e "\033[5;33mATTENTION\033[0m\033[33m : Le système Flatpak est installé mais sa gestion via ce script est désactivée !\033[0m"
-	echo -e "Pour gérer les Flatpak, remplacer la variable FLATPAK=false par FLATPAK=true au début du script $(basename $0)"
-fi
-
-### VERIF MàJ si option "check"
-if [[ "$1" = "check" ]]; then
+## Si bien root
+if [[ "$EUID" -ne 0 ]]; then
+	echo -e "${TXT_RED}${TXT_BOLD}ERREUR⤳${TXT_RESET} Ce script doit être lancé avec les privilèges root (su - ou sudo) !"
 	echo
-	echo -e -n "\033[1mRefresh du cache APT \033[0m"
+	exit 1
+fi
+
+## Si bien Ubuntu Desktop
+if ! check_apt_pkg ubuntu-desktop && ! check_apt_pkg ubuntu-desktop-minimal; then
+	echo -e "${TXT_RED}${TXT_BOLD}ERREUR⤳${TXT_RESET} Seule Ubuntu Desktop (GNOME) est supportée !"
+	echo
+	exit 1
+fi
+
+## Si Flatpak installé mais gestion par ce script désactivée
+if check_apt_pkg flatpak && [[ "$IS_FLATPAK_ENABLED" == "false" ]]; then
+	echo -e "${TXT_YELLOW}${TXT_BOLD}ATTENTION⤳${TXT_RESET} Le système Flatpak est installé mais sa gestion via ce script est désactivée !"
+	echo "Pour gérer les Flatpak, remplacez la variable IS_FLATPAK_ENABLED=\"false\" par IS_FLATPAK_ENABLED=\"true\" au début du script ${SCRIPT_NAME}."
+	echo
+fi
+
+### MODE VÉRIFICATION DES MISES À JOUR
+if [[ "${1:-}" == "check" ]]; then
+	echo -e -n "${TXT_BOLD}Refresh du cache APT ${TXT_RESET}"
 	refresh_apt_cache
 	check_cmd
 
-	echo -e "\033[1mMises à jour disponibles APT : \033[0m"
+	echo
+	echo -e "${TXT_BOLD}Mises à jour disponibles APT : ${TXT_RESET}"
 	check_apt_updates
 
-	echo
-
-	if $SNAP; then
-		if check_apt_pkg "snapd"; then
-			echo
-			echo -e "\033[1mMises à jour disponibles Snap : \033[0m"
-			check_snap_updates
-		fi
+	if [[ "$IS_SNAP_ENABLED" == "true" ]]; then
+		echo
+		echo -e "${TXT_BOLD}Mises à jour disponibles Snap : ${TXT_RESET}"
+		check_snap_updates
 	fi
 
-	if $FLATPAK; then
-		if check_apt_pkg "flatpak"; then
-			echo
-			echo -e "\033[1mMises à jour disponibles Flatpak : \033[0m"
-			check_flatpak_updates
-		fi
+	if [[ "$IS_FLATPAK_ENABLED" == "true" ]] && check_apt_pkg "flatpak"; then
+		echo
+		echo -e "${TXT_BOLD}Mises à jour disponibles Flatpak : ${TXT_RESET}"
+		check_flatpak_updates
 	fi
 
 	ask_update
-	exit;
+	exit 0
 fi
 
-### INFOS fichier log
-echo -e "\033[36m"
-echo "Pour suivre la progression des mises à jour : tail -f $LOGFILE"
-echo -e "\033[0m"
-## Date dans le log
-echo '-------------------' >> "$LOGFILE"
-date >> "$LOGFILE"
+### JOURNALISATION
+echo -e "${TXT_CYAN}Pour suivre la progression des mises à jour : tail -f ${LOG_FILE}${TXT_RESET}"
+echo
 
-### CONFIG système APT
-echo -e "\033[1m[01] Configuration du système APT\033[0m"
+## Séparation et date dans le fichier de log
+echo -e "\n--------------------\n$(date)\n--------------------\n" &>> "$LOG_FILE"
 
-echo -e -n " \xE2\x86\xB3 Refresh du cache "
+### CONFIGURATION APT
+echo -e "${TXT_BOLD}[01] Configuration du gestionnaire de paquets APT ${TXT_RESET}"
+
+echo -n " ↳ Refresh du cache "
 refresh_apt_cache
 check_cmd
 
-## MAJ des paquets DEB
-echo -e -n " \xE2\x86\xB3 Mise à jour des paquets "
-apt-get dist-upgrade -y >> "$LOGFILE" 2>&1
+echo -n " ↳ Mise à jour des paquets "
+apt-get dist-upgrade -y &>> "$LOG_FILE"
 check_cmd
 
-### CONFIG système Snap
-if $SNAP; then
-	echo -e "\033[1m[02] Configuration du système Snap\033[0m"
+### CONFIGURATION SNAP
+if [[ "$IS_SNAP_ENABLED" == "true" ]]; then
+	echo -e "${TXT_BOLD}[02] Configuration du gestionnaire de paquets Snap ${TXT_RESET}"
 
-	## INSTALL paquet requis pour système Snap
-	if ! check_apt_pkg "snapd"; then
-		echo -e -n " \xE2\x86\xB3 Installation du paquet requis : snapd "
-		add_apt_pkg snapd
-		check_cmd
-	fi
-
-	## MAJ des paquets Snap
-	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets "
-	snap refresh >> "$LOGFILE" 2>&1
+	echo -n " ↳ Mise à jour des paquets "
+	snap refresh &>> "$LOG_FILE"
 	check_cmd
 fi
 
-### CONFIG système Flatpak
-if $FLATPAK; then
-	echo -e "\033[1m[03] Configuration du système Flatpak\033[0m"
+### CONFIGURATION FLATPAK
+if [[ "$IS_FLATPAK_ENABLED" == "true" ]]; then
+	echo -e "${TXT_BOLD}[03] Configuration du gestionnaire de paquets Flatpak ${TXT_RESET}"
 
-	## INSTALL paquet requis pour système Flatpak
 	if ! check_apt_pkg "flatpak"; then
-		echo -e -n " \xE2\x86\xB3 Installation du paquet requis : flatpak "
+		echo -n " ↳ Installation du paquet requis : flatpak "
 		add_apt_pkg "flatpak"
 		check_cmd
 	fi
 
-	## MAJ des paquets Flatpak
-	echo -e -n " \xE2\x86\xB3 Mise à jour des paquets "
-	flatpak update --noninteractive >> "$LOGFILE" 2>&1
+	echo -n " ↳ Mise à jour des paquets "
+	flatpak update --noninteractive &>> "$LOG_FILE"
 	check_cmd
 fi
 
-### VERIF si reboot nécessaire
+### VÉRIFICATION SI REBOOT NECESSAIRE
 if need_reboot; then
 	ask_reboot
 fi
 
-### CONFIG des dépôts
-echo -e "\033[1m[04] Configuration des dépôts\033[0m"
+### CONFIGURATION DES DÉPOTS
+echo -e "${TXT_BOLD}[04] Configuration des dépôts ${TXT_RESET}"
 
 ## Firefox
-if ! check_apt_repo mozilla.sources; then
-	echo -e " \xE2\x86\xB3 Configuration du dépôt APT : Mozilla (Firefox) "
+if ! check_apt_repo mozilla.sources \
+	&& [[ -f "$ASSETS_PATH/apt/sources.list.d/mozilla.sources" ]]; then
+	
+	echo " ↳ Configuration du dépôt APT : Mozilla (Firefox) "
 
-	echo -e -n "  \xE2\x86\xB3 Import de la clé de signature du dépôt "
+	echo -n "  ↳ Import de la clé de signature du dépôt "
 	wget -qO - https://packages.mozilla.org/apt/repo-signing-key.gpg \
 	| gpg --dearmor -o /etc/apt/keyrings/packages.mozilla.org.gpg
 	check_cmd
 
-	echo -e -n "  \xE2\x86\xB3 Ajout du dépôt "
-	sudo cp "./assets/apt/sources.list.d/mozilla.sources" "/etc/apt/sources.list.d/"
+	echo -n "  ↳ Ajout du dépôt "
+	cp -uv "$ASSETS_PATH/apt/sources.list.d/mozilla.sources" "/etc/apt/sources.list.d/" &>> "$LOG_FILE"
 	check_cmd
 
-	echo -e -n "  \xE2\x86\xB3 Priorisation du dépôt "
-	sudo cp "./assets/apt/preferences.d/mozilla" "/etc/apt/preferences.d/"
-	check_cmd
+	if [[ -f "$ASSETS_PATH/apt/preferences.d/mozilla" ]]; then
+		echo -n "  ↳ Priorisation du dépôt "
+		cp -uv "$ASSETS_PATH/apt/preferences.d/mozilla" "/etc/apt/preferences.d/" &>> "$LOG_FILE"
+		check_cmd
+	fi
 
-	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
+	echo -n "  ↳ Refresh du cache "
 	refresh_apt_cache
 	check_cmd
 fi
 
 ## VS Code
-if ! check_apt_repo vscode.sources; then
-	echo -e " \xE2\x86\xB3 Configuration du dépôt APT : VS Code "
+if ! check_apt_repo vscode.sources \
+	&& [[ -f "$ASSETS_PATH/apt/sources.list.d/vscode.sources" ]]; then
 	
-	echo -e -n "  \xE2\x86\xB3 Import de la clé de signature du dépôt "
+	echo " ↳ Configuration du dépôt APT : VS Code "
+
+	echo -n "  ↳ Import de la clé de signature du dépôt "
 	wget -qO - https://packages.microsoft.com/keys/microsoft.asc \
 	| gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
 	check_cmd
-	
-	echo -e -n "  \xE2\x86\xB3 Ajout du dépôt "
-	sudo cp "./assets/apt/sources.list.d/vscode.sources" "/etc/apt/sources.list.d/"
+
+	echo -n "  ↳ Ajout du dépôt "
+	cp -uv "$ASSETS_PATH/apt/sources.list.d/vscode.sources" "/etc/apt/sources.list.d/" &>> "$LOG_FILE"
 	check_cmd
-	
-	echo -e -n "  \xE2\x86\xB3 Refresh du cache "
+
+	echo -n "  ↳ Refresh du cache "
 	refresh_apt_cache
 	check_cmd
 fi
 
 ## Flathub
-if $FLATPAK; then
-	if [[ $(flatpak remotes | grep -c flathub) -ne 1 ]]; then
-		echo -e -n " \xE2\x86\xB3 Configuration du dépôt Flatpak : Flathub "
-		flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo > /dev/null 2>&1
-		check_cmd
-	fi
+if [[ "$IS_FLATPAK_ENABLED" == "true" ]] \
+	&& check_apt_pkg "flatpak" \
+	&& ! flatpak remotes | grep -q "flathub"; then
+
+	echo -n " ↳ Configuration du dépôt Flatpak : Flathub "
+	flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo &>/dev/null
+	check_cmd
 fi
 
-### REMPLACEMENT Snap
-echo -e "\033[1m[05] Remplacement de Snap forcé par Ubuntu\033[0m"
+### REMPLACEMENT SNAP
+echo -e "${TXT_BOLD}[05] Remplacement de Snap forcé par Ubuntu ${TXT_RESET}"
 
 ## Firefox
 if check_snap_pkg "firefox"; then
-	echo -e " \xE2\x86\xB3 Remplacement du Snap Firefox par le paquet du dépôt APT Mozilla "
-	echo -e -n "  \xE2\x86\xB3 Suppression du Snap : firefox "
+	echo " ↳ Remplacement du Snap Firefox par le paquet du dépôt APT Mozilla"
+
+	echo -n "  ↳ Suppression du Snap : firefox "
 	del_snap_pkg "firefox"
 	check_cmd
 
-	echo -e -n "  \xE2\x86\xB3 Suppression du paquet résiduel : firefox "
+	echo -n "  ↳ Suppression du paquet transitoire : firefox "
 	del_apt_pkg "firefox"
 	check_cmd
 
-	echo -e -n "  \xE2\x86\xB3 Installation du paquet : firefox "
+	echo -n "  ↳ Installation du paquet officiel : firefox "
 	add_apt_pkg "firefox"
 	check_cmd
 
-	echo -e -n "  \xE2\x86\xB3 Installation du paquet : firefox-l10n-fr "
+	echo -n "  ↳ Installation du paquet de langue : firefox-l10n-fr "
 	add_apt_pkg "firefox-l10n-fr"
 	check_cmd
 fi
 
-### INSTALL/SUPPRESSION DEB
-echo -e "\033[1m[06] Gestion des paquets APT\033[0m"
-## Selon packages.list
-while read -r line; do
-	if [[ "$line" == add:* ]]; then
-		p=${line#add:}
-		if ! check_apt_pkg "$p"; then
-			echo -e -n " \xE2\x86\xB3 Installation du paquet : $p "
-			add_apt_pkg "$p"
-			check_cmd
-		fi
-	fi
-	
-	if [[ "$line" == del:* ]]; then
-		p=${line#del:}
-		if check_apt_pkg "$p"; then
-			echo -e -n " \xE2\x86\xB3 Suppression du paquet : $p "
-			del_apt_pkg "$p"
-			check_cmd
-		fi
-	fi
-done < "$CURRENTPATH/packages.list"
+### INSTALLATION/SUPPRESSION DEB
+echo -e "${TXT_BOLD}[06] Gestion des paquets Deb ${TXT_RESET}"
 
-### INSTALL/SUPPRESSION Snap
-if $SNAP; then
-	echo -e "\033[1m[07] Gestion des paquets Snap\033[0m"
-	## Selon snap.list
-	while read -r line
-	do
-		if [[ "$line" == add:* ]]; then
-			p=${line#add:}
-			if ! check_snap_pkg "$p"; then
-				echo -e -n " \xE2\x86\xB3 Installation du Snap : $p "
-				add_snap_pkg "$p"
-				check_cmd
-			fi
-		fi
+## Selon fichier packages.list
+if [[ -f "$SCRIPT_PATH/packages.list" ]]; then
+	while read -r line || [[ -n "$line" ]]; do
+		[[ -z "${line:-}" || "$line" =~ ^[[:space:]]*# || "$line" =~ ^[[:space:]]*$ ]] && continue
 
-		if [[ "$line" == addclassic:* ]]; then
-			p=${line#addclassic:}
-			if ! check_snap_pkg "$p"; then
-				echo -e -n " \xE2\x86\xB3 Installation du Snap : $p "
-				add_snap_classic_pkg "$p"
+		if [[ "$line" == "add:"* ]]; then
+			p="${line#add:}"
+			if ! check_apt_pkg "$p"; then
+				echo -n " ↳ Installation du paquet : $p "
+				add_apt_pkg "$p"
+				check_cmd
+			fi
+		elif [[ "$line" == "del:"* ]]; then
+			p="${line#del:}"
+			if check_apt_pkg "$p"; then
+				echo -n " ↳ Suppression du paquet : $p "
+				del_apt_pkg "$p"
 				check_cmd
 			fi
 		fi
-		
-		if [[ "$line" == del:* ]]; then
-			p=${line#del:}
-			if check_snap_pkg "$p"; then
-				echo -e -n " \xE2\x86\xB3 Suppression du Snap : $p "
-				del_snap_pkg "$p"
-				check_cmd
-			fi
-		fi
-	done < "$CURRENTPATH/snap.list"
+	done < "$SCRIPT_PATH/packages.list"
+else
+	echo -e " ↳ ${TXT_YELLOW}${TXT_BOLD}ATTENTION⤳${TXT_RESET} Le fichier packages.list n'existe pas !"
 fi
 
-### INSTALL/SUPPRESSION Flatpak
-if $FLATPAK; then
-	echo -e "\033[1m[08] Gestion des paquets Flatpak\033[0m"
-	## Selon flatpak.list
-	while read -r line; do
-		if [[ "$line" == add:* ]]; then
-			p=${line#add:}
-			if ! check_flatpak_pkg "$p"; then
-				echo -e -n " \xE2\x86\xB3 Installation du Flatpak : $p "
-				add_flatpak_pkg "$p"
-				check_cmd
+### INSTALLATION/SUPPRESSION SNAP
+if [[ "$IS_SNAP_ENABLED" == "true" ]]; then
+	echo -e "${TXT_BOLD}[07] Gestion des paquets Snap ${TXT_RESET}"
+
+	## Selon fichier snap.list
+	if [[ -f "$SCRIPT_PATH/snap.list" ]]; then
+		while read -r line || [[ -n "$line" ]]; do
+			[[ -z "${line:-}" || "$line" =~ ^[[:space:]]*# || "$line" =~ ^[[:space:]]*$ ]] && continue
+
+			if [[ "$line" == "add:"* ]]; then
+				p="${line#add:}"
+				if ! check_snap_pkg "$p"; then
+					echo -n " ↳ Installation du Snap : $p "
+					add_snap_pkg "$p"
+					check_cmd
+				fi
+			elif [[ "$line" == "addclassic:"* ]]; then
+				p="${line#addclassic:}"
+				if ! check_snap_pkg "$p"; then
+					echo -n " ↳ Installation du Snap : $p "
+					add_snap_classic_pkg "$p"
+					check_cmd
+				fi
+			elif [[ "$line" == "del:"* ]]; then
+				p="${line#del:}"
+				if check_snap_pkg "$p"; then
+					echo -n " ↳ Suppression du Snap : $p "
+					del_snap_pkg "$p"
+					check_cmd
+				fi
 			fi
-		fi
-		
-		if [[ "$line" == del:* ]]; then
-			p=${line#del:}
-			if check_flatpak_pkg "$p"; then
-				echo -e -n " \xE2\x86\xB3 Suppression du Flatpak : $p "
-				del_flatpak_pkg "$p"
-				check_cmd
-			fi
-		fi
-	done < "$CURRENTPATH/flatpak.list"
+		done < "$SCRIPT_PATH/snap.list"
+	else
+		echo -e " ↳ ${TXT_YELLOW}${TXT_BOLD}ATTENTION⤳${TXT_RESET} Le fichier snap.list n'existe pas !"
+	fi
 fi
 
-### CONFIG système
-echo -e "\033[1m[09] Configuration personnalisée du système\033[0m"
+### INSTALLATION/SUPPRESSION FLATPAK
+if [[ "$IS_FLATPAK_ENABLED" == "true" ]]; then
+	echo -e "${TXT_BOLD}[08] Gestion des paquets Flatpak ${TXT_RESET}"
+
+	## Selon fichier flatpak.list
+	if [[ -f "$SCRIPT_PATH/flatpak.list" ]]; then
+		while read -r line || [[ -n "$line" ]]; do
+			[[ -z "${line:-}" || "$line" =~ ^[[:space:]]*# || "$line" =~ ^[[:space:]]*$ ]] && continue
+
+			if [[ "$line" == "add:"* ]]; then
+				p="${line#add:}"
+				if ! check_flatpak_pkg "$p"; then
+					echo -n " ↳ Installation du Flatpak : $p "
+					add_flatpak_pkg "$p"
+					check_cmd
+				fi
+			elif [[ "$line" == "del:"* ]]; then
+				p="${line#del:}"
+				if check_flatpak_pkg "$p"; then
+					echo -n " ↳ Suppression du Flatpak : $p "
+					del_flatpak_pkg "$p"
+					check_cmd
+				fi
+			fi
+		done < "$SCRIPT_PATH/flatpak.list"
+	else
+		echo -e " ↳ ${TXT_YELLOW}${TXT_BOLD}ATTENTION⤳${TXT_RESET} Le fichier flatpak.list n'existe pas !"
+	fi
+fi
+
+### CONFIGURATION SYSTÈME
+echo -e "${TXT_BOLD}[09] Configuration personnalisée du système ${TXT_RESET}"
 
 ## Fastfetch
-if check_apt_pkg "fastfetch" && [[ ! -d "$USER_HOME/.config/fastfetch" ]]; then
-	echo -e -n " \xE2\x86\xB3 Configuration de fastfetch "
-	if [[ "$(cat /sys/devices/virtual/dmi/id/product_version 2>/dev/null)" == ThinkPad* ]]; then
-		fastfetch_config="thinkpad"
-	else
-		fastfetch_config="default"
+if check_apt_pkg "fastfetch" \
+	&& [[ -d "$ASSETS_PATH/fastfetch/$FASTFETCH_CONFIG" ]]; then
+	echo -e " ↳ Configuration de Fastfetch"
+
+	if [[ ! -d "$USER_PATH/.config/fastfetch" ]]; then
+		echo -n "  ↳ Création du dossier de config (~/.config/fastfetch) "
+		sudo -u "$CURRENT_USER" mkdir -p "$USER_PATH/.config/fastfetch"
+		check_cmd
 	fi
-	cp -r "./assets/fastfetch/${fastfetch_config}/" "$USER_HOME/.config/fastfetch" && \
-	chown -R "$SUDO_USER:$SUDO_USER" "$USER_HOME/.config/fastfetch"
+
+	echo -n "  ↳ Mise à jour de la config (si nécessaire) "
+	sudo -u "$CURRENT_USER" cp -ruv "$ASSETS_PATH/fastfetch/$FASTFETCH_CONFIG/"* "$USER_PATH/.config/fastfetch/" | sudo tee -a "$LOG_FILE" &>/dev/null
 	check_cmd
 fi
 
 ## Bash
-if [[ ! -d "$USER_HOME/.bashrc.d" ]]; then
-	echo -e -n " \xE2\x86\xB3 Ajout des alias et fonctions Bash dans ~/.bashrc.d "
-	cp -r "./assets/bash/bashrc.d/" "$USER_HOME/.bashrc.d" && \
-	chown -R "$SUDO_USER:$SUDO_USER" "$USER_HOME/.bashrc.d"
-	check_cmd
-	echo -e -n " \xE2\x86\xB3 Import des fichiers de ~/.bashrc.d dans .bashrc "
-	sudo -u "$SUDO_USER" cat "./assets/bash/bashrc" >> "$USER_HOME/.bashrc"
-	check_cmd
-fi
+if check_apt_pkg "bash" \
+	&& [[ -d "$ASSETS_PATH/bash/bashrc.d" ]]; then
+	echo -e " ↳ Configuration de Bash"
 
-## Bluetooth
-if [[ -e "/etc/bluetooth/main.conf" ]]; then
-	if ! grep -q "^[[:space:]]*AutoEnable=false" "/etc/bluetooth/main.conf"; then
-		echo -e -n " \xE2\x86\xB3 Désactivation du bluetooth au démarrage "
-		# Cette regex gère les espaces et remplace '#AutoEnable=true' ou 'AutoEnable=true'
-		sed -i 's/^[[:space:]]*#\?[[:space:]]*AutoEnable=.*/AutoEnable=false/' "/etc/bluetooth/main.conf"
+	if [[ ! -d "$USER_PATH/.bashrc.d" ]]; then
+		echo -n "  ↳ Création du dossier de config (~/.bashrc.d) "
+		sudo -u "$CURRENT_USER" mkdir -p "$USER_PATH/.bashrc.d"
+		check_cmd
+	fi
+
+	echo -n "  ↳ Mise à jour de la config (si nécessaire) "
+	sudo -u "$CURRENT_USER" cp -ruv "$ASSETS_PATH/bash/bashrc.d/"* "$USER_PATH/.bashrc.d/" | sudo tee -a "$LOG_FILE" &>/dev/null
+	check_cmd
+
+	if [[ -f "$ASSETS_PATH/bash/bashrc" ]] \
+		&& [[ -f "$USER_PATH/.bashrc" ]] \
+		&& ! grep -q "bashrc.d" "$USER_PATH/.bashrc"; then
+
+		echo -n "  ↳ Configuration de l'import automatique du dossier de config "
+		cat "$ASSETS_PATH/bash/bashrc" | sudo -u "$CURRENT_USER" tee -a "$USER_PATH/.bashrc" | sudo tee -a "$LOG_FILE" &>/dev/null
 		check_cmd
 	fi
 fi
 
-echo
+## Bluetooth
+if [[ -f "/etc/bluetooth/main.conf" ]] \
+	&& ! grep -q "^[[:space:]]*AutoEnable=false" "/etc/bluetooth/main.conf"; then
 
-### VERIF si reboot nécessaire
+	echo -n " ↳ Désactivation du Bluetooth au démarrage "
+	sed -i 's/^[[:space:]]*#\?[[:space:]]*AutoEnable=.*/AutoEnable=false/' "/etc/bluetooth/main.conf"
+	check_cmd
+fi
+
+### VÉRIFICATION SI REBOOT NECESSAIRE
 if need_reboot; then
 	ask_reboot
+else
+	echo
 fi
+
+##################
+### FIN SCRIPT ###
+##################
