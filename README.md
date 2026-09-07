@@ -52,7 +52,7 @@ IS_FLATPAK_ENABLED="false"
 > A faire avant le premier lancement du script !
 
 ### 2. Exécution du script
-Ouvrez votre terminal dans le dossier du dépôt, autorisez l'exécution du script et lancez-le avec les privilèges de super-utilisateur :
+Ouvrez votre terminal dans le dossier du dépôt, autorisez l'exécution du script et lancez-le avec les privilèges super-utilisateur (root) :
 ```bash
 chmod +x config-ubuntu.sh
 sudo ./config-ubuntu.sh
