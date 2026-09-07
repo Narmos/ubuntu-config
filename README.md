@@ -15,10 +15,10 @@ Script d'automatisation pour configurer et mettre à jour mon système Ubuntu (b
 
 ## 🔍 Ce que fait le script
 
-1. Configure le système APT et met à jour les paquets
-2. Configure le système Snap et met à jour les paquets
-3. Configure le système Flatpak et met à jour les paquets
-4. Configure les dépôts APT et Flatpak additionnels
+1. Configure le gestionnaire de paquets APT et applique les mises à jour
+2. Configure le gestionnaire de paquets Snap et applique les mises à jour
+3. Configure le gestionnaire de paquets Flatpak et applique les mises à jour
+4. Configure les dépôts APT et Flatpak tiers
 5. Remplace les Snaps forcés par Ubuntu
 6. Ajoute ou supprime les paquets deb spécifiés dans `packages.list`
 7. Ajoute ou supprime les paquets snap spécifiés dans `snap.list`
@@ -45,7 +45,7 @@ Script d'automatisation pour configurer et mettre à jour mon système Ubuntu (b
 ### 1. Configuration de Flatpak (Optionnel)
 Par défaut, le script installe et gère le système de paquets Flatpak. Pour désactiver Flatpak, ouvrez le fichier `config-ubuntu.sh` et modifiez la variable suivante :
 ```bash
-FLATPAK=false
+IS_FLATPAK_ENABLED="false"
 ```
 
 > [!IMPORTANT]
