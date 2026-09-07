@@ -13,6 +13,7 @@ add:wakeonlan
 # GUI
 add:bazaar
 add:code
+add:deja-dup
 add:file-roller
 add:filezilla
 add:geary
