@@ -88,7 +88,7 @@ ask_update() {
 	read -r response
 	response="${response:-n}"
 
-	if [[ "${response,,}" =~ ^[oy]$ ]]; then
+	if [[ "${response,,}" =~ ^[oOyY]$ ]]; then
 		clear -x
 		exec bash "$0"
 	fi
@@ -107,7 +107,7 @@ ask_reboot() {
 	read -r response
 	response="${response:-n}"
 	
-	if [[ "${response,,}" =~ ^[oy]$ ]]; then
+	if [[ "${response,,}" =~ ^[oOyY]$ ]]; then
 		echo
 		echo -e "${TXT_CYAN} ⟳ reboot via systemd... ${TXT_RESET}"
 		echo
@@ -502,7 +502,7 @@ if check_apt_pkg "fastfetch" \
 	fi
 
 	echo -n "  ↳ Mise à jour de la config (si nécessaire) "
-	sudo -u "$CURRENT_USER" cp -ruv "$ASSETS_PATH/fastfetch/$FASTFETCH_CONFIG/"* "$USER_PATH/.config/fastfetch/" | sudo tee -a "$LOG_FILE" &>/dev/null
+	sudo -u "$CURRENT_USER" cp -ruv "$ASSETS_PATH/fastfetch/$FASTFETCH_CONFIG/." "$USER_PATH/.config/fastfetch/" | sudo tee -a "$LOG_FILE" &>/dev/null
 	check_cmd
 fi
 
@@ -518,7 +518,7 @@ if check_apt_pkg "bash" \
 	fi
 
 	echo -n "  ↳ Mise à jour de la config (si nécessaire) "
-	sudo -u "$CURRENT_USER" cp -ruv "$ASSETS_PATH/bash/bashrc.d/"* "$USER_PATH/.bashrc.d/" | sudo tee -a "$LOG_FILE" &>/dev/null
+	sudo -u "$CURRENT_USER" cp -ruv "$ASSETS_PATH/bash/bashrc.d/." "$USER_PATH/.bashrc.d/" | sudo tee -a "$LOG_FILE" &>/dev/null
 	check_cmd
 
 	if [[ -f "$ASSETS_PATH/bash/bashrc" ]] \
