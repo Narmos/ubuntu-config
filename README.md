@@ -18,7 +18,7 @@ Script d'automatisation pour configurer et mettre à jour mon système Ubuntu (b
 1. Configure le gestionnaire de paquets APT et applique les mises à jour
 2. Configure le gestionnaire de paquets Snap et applique les mises à jour
 3. Configure le gestionnaire de paquets Flatpak et applique les mises à jour
-4. Configure les dépôts APT et Flatpak tiers
+4. Configure les dépôts APT et Flatpak
 5. Remplace les Snaps forcés par Ubuntu
 6. Ajoute ou supprime les paquets deb spécifiés dans `packages.list`
 7. Ajoute ou supprime les paquets snap spécifiés dans `snap.list`
@@ -31,7 +31,7 @@ Script d'automatisation pour configurer et mettre à jour mon système Ubuntu (b
 
 ```bash
 .
-├── assets/               # Ressources à copier sur le système
+├── assets/               # Ressources à copier sur le système (si existantes)
 ├── config-ubuntu.sh      # Script principal
 ├── flatpak.list          # Liste des paquets Flatpak à installer/désinstaller
 ├── packages.list         # Liste des paquets Deb à installer/désinstaller
