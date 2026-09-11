@@ -18,6 +18,6 @@ fi
 alias sysupdate='sys-update'
 
 ## Quick access to GitHub projects
-alias gh='cd ~/Code/GitHub && ls'
+alias cdgh='cd ~/Code/GitHub && ls'
 ## Using the 'docker' command for Podman
 alias docker='podman'
